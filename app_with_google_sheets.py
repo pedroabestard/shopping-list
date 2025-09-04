@@ -83,7 +83,7 @@ for i, row in enumerate(filtered_data, start=2):  # start=2 because row 1 is hea
     c3.write(row["unit"])
     if c4.button("❌ Delete", key=f"del_{i}"):
         delete_item(i)
-        st.experimental_rerun()
+        st.rerun()
 
 st.divider()
 

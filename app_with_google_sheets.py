@@ -54,27 +54,31 @@ def load_data():
     raw_data = worksheet.get_all_records()
     return [{k.lower(): v for k, v in row.items()} for row in raw_data]
 
-def save_item(item, qty, unit, tab):
+def save_item(item, qty, unit, tab, comments):
     """Append or overwrite a row in Google Sheets"""
     data = load_data()
-    # Check if item already exists in this tab
     row_index = None
-    for i, row in enumerate(data, start=2):  # Google Sheets row index starts at 2
+    for i, row in enumerate(data, start=2):
         if row.get("tab") == tab and row.get("item").strip().lower() == item.strip().lower():
             row_index = i
             break
 
-    if row_index:  # overwrite existing row
-        worksheet.update(f"A{row_index}:D{row_index}", [[item, qty, unit, tab]])
-    else:  # append new row
-        worksheet.append_row([item, qty, unit, tab])
+    if row_index:
+        worksheet.update(f"A{row_index}:E{row_index}", [[item, qty, unit, comments, tab]])
+    else:
+        worksheet.append_row([item, qty, unit, comments, tab])
 
-    st.cache_data.clear()  # refresh cache
+    st.cache_data.clear()
 
 def delete_item(row_index):
-    """Delete a row by index (1-based in Google Sheets)"""
+    """Delete a row by index"""
     worksheet.delete_rows(row_index)
-    st.cache_data.clear()  # refresh cache
+    st.cache_data.clear()
+
+def update_comment(row_index, comment):
+    """Update comment only"""
+    worksheet.update(f"D{row_index}", [[comment]])  # D = 4th column (comments)
+    st.cache_data.clear()
 
 # -----------------------------
 # Streamlit UI
@@ -89,24 +93,35 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
     with tab:
         st.subheader(f"{store} List")
 
-        # Display headers
-        header_cols = st.columns([4, 1, 1, 1])
+        # Headers
+        header_cols = st.columns([2,1,1,4,1])
         header_cols[0].markdown("**Item**")
         header_cols[1].markdown("**Qty**")
         header_cols[2].markdown("**Unit**")
-        header_cols[3].markdown("**Action**")
+        header_cols[3].markdown("**Comment**")
+        header_cols[4].markdown("**Action**")
 
-        # Filter items for this store
         store_items = [row for row in data if row.get("tab") == store]
 
-        # Display items
+        # Display rows
         for i, row in enumerate(store_items, start=2):
-            c1, c2, c3, c4 = st.columns([4, 1, 1, 1])
+            c1, c2, c3, c4, c5 = st.columns([2,1,1,4,1])
             c1.write(row.get("item", ""))
             c2.write(row.get("qty", ""))
             c3.write(row.get("unit", ""))
 
-            if c4.button("❌ Delete", key=f"del_{store}_{i}"):
+            # Editable comment
+            comment_key = f"comment_{store}_{i}"
+            comment_value = st.text_input("", value=row.get("comments", ""), key=comment_key)
+
+            # Save comment button
+            if c4.button("💾", key=f"save_comment_{store}_{i}"):
+                update_comment(i, comment_value)
+                st.success("Comment updated!")
+                st.rerun()
+
+            # Delete item button
+            if c5.button("❌ Delete", key=f"del_{store}_{i}"):
                 delete_item(i)
                 st.rerun()
 
@@ -132,8 +147,18 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
             # Optional unit
             unit = st.text_input("Unit (optional)", value="")
 
+            # Optional comment
+            comments = st.text_input("Comment (optional)", value="")
+
             submitted = st.form_submit_button("Add")
             if submitted and item:
-                save_item(item, qty, unit, store)
-                st.success(f"Added {item}" + (f" ({qty} {unit})" if qty or unit else "") + f" to {store}")
+                save_item(item, qty, unit, store, comments)
+                msg = f"Added {item}"
+                if qty or unit or comments:
+                    msg += f" ({qty} {unit}" if qty or unit else ""
+                    if comments:
+                        msg += f", Comment: {comments}"
+                    msg += ")"
+                msg += f" to {store}"
+                st.success(msg)
                 st.rerun()

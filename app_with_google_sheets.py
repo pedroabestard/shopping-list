@@ -16,7 +16,7 @@ credentials = ServiceAccountCredentials.from_json_keyfile_dict(
 client = gspread.authorize(credentials)
 
 SHEET_NAME = "Shopping List"
-worksheet = client.open(SHEET_NAME).sheet1  # 👈 ensure correct sheet
+worksheet = client.open("ShoppingList").sheet1  # 👈 ensure correct sheet
 
 # -----------------------------
 # Predefined Items per Store

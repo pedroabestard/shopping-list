@@ -95,8 +95,9 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
             else:
                 item = st.text_input("Enter product name")
 
-            qty = st.number_input("Quantity", min_value=1, value=1)
-            unit = st.text_input("Unit (e.g., kg, pack, bottle)", value="")
+            qty_input = st.text_input("Quantity (optional)", value="")
+            qty = qty_input if qty_input.strip() != "" else ""  # keep empty string if not entered
+            unit = st.text_input("Unit (optional)", value="")
 
             submitted = st.form_submit_button("Add")
             if submitted and item:

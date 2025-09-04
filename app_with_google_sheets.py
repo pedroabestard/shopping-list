@@ -90,7 +90,7 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
         st.subheader(f"{store} List")
 
         # Display headers
-        header_cols = st.columns([4, 1, 1, 1])
+        header_cols = st.columns([1, 1, 1, 1])
         header_cols[0].markdown("**Item**")
         header_cols[1].markdown("**Qty**")
         header_cols[2].markdown("**Unit**")
@@ -101,7 +101,7 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
 
         # Display items
         for i, row in enumerate(store_items, start=2):
-            c1, c2, c3, c4 = st.columns([4, 1, 1, 1])
+            c1, c2, c3, c4 = st.columns([1, 1, 1, 1])
             c1.write(row.get("item", ""))
             c2.write(row.get("qty", ""))
             c3.write(row.get("unit", ""))

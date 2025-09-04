@@ -98,4 +98,4 @@ with st.form("add_item_form"):
     if submitted and item:
         save_item(item, qty, unit, tab)
         st.success(f"Added {item} ({qty} {unit}) to {tab}")
-        st.experimental_rerun()
+        st.rerun()

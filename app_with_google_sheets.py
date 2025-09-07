@@ -23,9 +23,29 @@ sheet_notes = client.open(SHEET_NAME).worksheet("Notes")          # notes
 # Predefined Items per Store
 # -----------------------------
 PREDEFINED_ITEMS = {
-    "Sedanos": ["Limon", "Tomate", "Pepino", "Cebolla morada", "Cebolla amarilla"],
-    "Martinez": ["Pierna de pollo", "Bistec de Cerdo", "Bistec de res", "Chuleta ahumada"],
-    "Farmacia": ["Peptobismol", "Omeprazol", "Vitaminas"]
+    "Sedanos": ["Limon", "Tomate", "Pepino", "Cebolla morada", "Cebolla amarilla",
+        "Cebolla blanca", "Ajo", "Guineo", "Platano macho", "Platano Burro",
+        "Malanga", "Boniato", "Sweet potato", "Papas", "Melon", "Manzana",
+        "Papaya", "Uvas", "Pimiento ojo", "Pimiento verde", "Pimiento amarillo",
+        "Col", "Ensalada Caesar", "Jamon", "Queso gouda", "Queso parmesano", "Leche",
+        "Huevos", "Salchicha", "Chorizo colombiano", "Mantequilla", "Yogurt de sabor",
+        "Yogurt plano", "Mayonesa", "Leche condensada", "Ketchup", "Mostaza", "Aceitunas",
+        "Mayoracha", "Leche evaporada", "Agua", "Malta Hatuey", "Refresco Piñita",
+        "Coca cola zero", "Coca Cola regular", "Cerveza", "Malta bucanero",
+        "Pure de tomate", "Cafe", "Adobo Goya", "Lemon-Pepper", "Sal", "Tajin",
+        "Salsa Maggie", "Comino", "Miel", "Azucar", "Chocolate", "Palomitas de Maiz",
+        "Nutella", "Bizcocho", "Aceite de cocina", "Aceite de Oliva", "Frijoles", "Spaghettis",
+        "Arroz", "Chicharos", "Helado de Chocolate", "Helado de Cookies and Cream",
+        "Helado de Cafe", "Helado de Mantecado", "Helado de Vainilla", "Galletas saladas",
+        "Pan de Hamburgues", "Tortilla de Maiz", "Tortilla de Harina", "Pan de Sandwich",
+        "Maruchan", "Chicles", "Crema"],
+    "Martinez": ["Muslo de pollo", "Bistec de res", "Chuleta ahumada",
+                 "Salmon", "Huevos", "Pechuga de pollo", "Alitas de Pollo", "Queso Gouda",
+                 "Hamburguesa", "Creoquetas de Jamon", "Costilla", "Clamato", "Arroz",
+                 "Aceite Vegetal de maiz", "Bolas de cerdo", "Fruta congelada para licuado", "Churros",
+                 "Papas prefritas", "Lata de fruta en almibar", "Camarones", "Atun",
+                 "Yuca congelada"],
+    "Farmacia": ["Peptobismol", "NyQuil", "Acetaminophen", "Omeprazol", "Vitaminas"]
 }
 
 # -----------------------------

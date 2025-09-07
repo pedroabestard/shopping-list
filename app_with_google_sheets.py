@@ -112,6 +112,29 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
 
         st.markdown("---")
 
+        # Notes Section
+        st.subheader(f"📝 Notes for {store}")
+
+        store_notes = [row for row in data if row["tab"] == store and row.get("type", "item") == "note"]
+        if store_notes:
+            for i, row in enumerate(store_notes, start=2):
+                st.write(f"• {row['item']}")
+                if st.button(f"❌ Delete note", key=f"del_note_{store}_{i}"):
+                    delete_item(i)
+                    st.rerun()
+        else:
+            st.info("No notes yet.")
+
+        with st.form(key=f"note_{store}"):
+            note = st.text_input("Add a note (max 100 chars)", max_chars=100)
+            submitted_note = st.form_submit_button("Add Note")
+            if submitted_note and note:
+                save_item(note, "", "", store, row_type="note")
+                st.success(f"Added note: {note}")
+                st.rerun()
+
+        st.markdown("---")
+
         # Add new item
         st.subheader(f"➕ Add Item to {store}")
         with st.form(key=f"add_{store}"):

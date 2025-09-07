@@ -1,7 +1,6 @@
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
 
 # -----------------------------
 # Google Sheets Setup
@@ -17,7 +16,8 @@ credentials = ServiceAccountCredentials.from_json_keyfile_dict(
 client = gspread.authorize(credentials)
 
 SHEET_NAME = "Shopping List"
-worksheet = client.open(SHEET_NAME).sheet1  # 👈 ensure correct sheet
+sheet_items = client.open(SHEET_NAME).worksheet("Shopping List")  # items
+sheet_notes = client.open(SHEET_NAME).worksheet("Notes")          # notes
 
 # -----------------------------
 # Predefined Items per Store
@@ -32,38 +32,41 @@ PREDEFINED_ITEMS = {
 # Data Functions
 # -----------------------------
 @st.cache_data(ttl=60)
-def load_data():
-    """Fetch all rows from Google Sheets"""
-    return worksheet.get_all_records()
+def load_items():
+    return sheet_items.get_all_records()
 
-def save_item(item, qty, unit, tab, row_type="item"):
-    """Insert or update item/note in Google Sheets"""
-    rows = worksheet.get_all_records()
-    headers = worksheet.row_values(1)
+@st.cache_data(ttl=60)
+def load_notes():
+    return sheet_notes.get_all_records()
 
-    # Check if sheet has "type" column
-    if "type" not in headers:
-        worksheet.update_cell(1, len(headers) + 1, "type")
-        headers.append("type")
-        # Fill existing rows with "item"
-        for i in range(2, len(rows) + 2):
-            worksheet.update_cell(i, len(headers), "item")
-
-    # Search for existing
+def save_item(item, qty, unit, tab):
+    """Insert or update an item in Shopping List sheet"""
+    rows = sheet_items.get_all_records()
     for i, row in enumerate(rows, start=2):
-        if row["tab"] == tab and row["item"].lower() == item.lower() and row.get("type", "item") == row_type:
-            # Update existing row
-            worksheet.update(f"A{i}:E{i}", [[item, qty, unit, tab, row_type]])
+        if row["tab"] == tab and row["item"].lower() == item.lower():
+            # Update existing
+            sheet_items.update(f"A{i}:D{i}", [[item, qty, unit, tab]])
             st.cache_data.clear()
             return
-
-    # If not found → append new
-    worksheet.append_row([item, qty, unit, tab, row_type])
+    # If not found, append
+    sheet_items.append_row([item, qty, unit, tab])
     st.cache_data.clear()
 
 def delete_item(row_index):
-    """Delete a row by index (Google Sheets is 1-based)"""
-    worksheet.delete_rows(row_index)
+    sheet_items.delete_rows(row_index)
+    st.cache_data.clear()
+
+def save_note(note, tab):
+    """Insert note in Notes sheet (no duplicates)"""
+    rows = sheet_notes.get_all_records()
+    for i, row in enumerate(rows, start=2):
+        if row["tab"] == tab and row["note"].lower() == note.lower():
+            return  # prevent duplicates
+    sheet_notes.append_row([note, tab])
+    st.cache_data.clear()
+
+def delete_note(row_index):
+    sheet_notes.delete_rows(row_index)
     st.cache_data.clear()
 
 # -----------------------------
@@ -71,7 +74,8 @@ def delete_item(row_index):
 # -----------------------------
 st.title("🛒 Shared Shopping List")
 
-data = load_data()
+items_data = load_items()
+notes_data = load_notes()
 
 tabs = st.tabs(["Sedanos", "Martinez", "Farmacia"])
 
@@ -80,24 +84,27 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
         st.subheader(f"{store} List")
 
         # -----------------------------
-        # Show existing items
+        # Show existing items aligned
         # -----------------------------
         store_items = [
-            (i, row) for i, row in enumerate(data, start=2)
-            if row["tab"] == store and row.get("type", "item") == "item"
+            (i, row) for i, row in enumerate(items_data, start=2)
+            if row["tab"] == store
         ]
 
         if store_items:
-            df = pd.DataFrame(
-                [{"Item": row["item"], "Qty": row["qty"], "Unit": row["unit"]} for _, row in store_items]
-            )
-            df["Delete"] = ""
+            header = st.columns([4, 1, 2, 1])
+            header[0].markdown("**Item**")
+            header[1].markdown("**Qty**")
+            header[2].markdown("**Unit**")
+            header[3].markdown("**Delete**")
 
-            st.dataframe(df, use_container_width=True, hide_index=True)
-
-            for idx, (i, row) in enumerate(store_items):
-                if st.button("❌", key=f"del_item_{store}_{i}"):
-                    delete_item(i)
+            for row_index, row in store_items:
+                cols = st.columns([4, 1, 2, 1])
+                cols[0].write(row["item"])
+                cols[1].write(row["qty"])
+                cols[2].write(row["unit"])
+                if cols[3].button("❌", key=f"del_item_{store}_{row_index}"):
+                    delete_item(row_index)
                     st.rerun()
         else:
             st.info("No items yet.")
@@ -105,22 +112,24 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
         st.markdown("---")
 
         # -----------------------------
-        # Showed Notes Section
+        # Notes Section
         # -----------------------------
         st.subheader(f"📝 Notes for {store}")
 
         store_notes = [
-            (i, row) for i, row in enumerate(data, start=2)
-            if row["tab"] == store and row.get("type", "item") == "note"
+            (i, row) for i, row in enumerate(notes_data, start=2)
+            if row["tab"] == store
         ]
 
         if store_notes:
-            for i, row in store_notes:
-                st.write(f"• {row['item']}")
-                if st.button("❌", key=f"del_note_{store}_{i}"):
-                    delete_item(i)
+            for row_index, row in store_notes:
+                cols = st.columns([8, 1])
+                cols[0].write(f"• {row['note']}")
+                if cols[1].button("❌", key=f"del_note_{store}_{row_index}"):
+                    delete_note(row_index)
                     st.rerun()
         else:
+
             st.info("No notes yet.")
 
         # -----------------------------
@@ -140,20 +149,20 @@ for store, tab in zip(PREDEFINED_ITEMS.keys(), tabs):
 
             submitted = st.form_submit_button("Add")
             if submitted and item:
-                save_item(item, qty, unit, store, row_type="item")
+                save_item(item, qty, unit, store)
                 st.success(f"Added {item} ({qty} {unit}) to {store}")
                 st.rerun()
 
         st.markdown("---")
 
         # -----------------------------
-        # Adding Notes Section (bottom)
+        # Add Notes Section (bottom)
         # -----------------------------
 
         with st.form(key=f"note_{store}"):
             note = st.text_input("Add a note (max 100 chars)", max_chars=100)
             submitted_note = st.form_submit_button("Add Note")
             if submitted_note and note:
-                save_item(note, "", "", store, row_type="note")
+                save_note(note, store)
                 st.success(f"Added note: {note}")
                 st.rerun()
